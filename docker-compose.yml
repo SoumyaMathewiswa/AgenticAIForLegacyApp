@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: bedrock-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bedrock_legacy
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bedrock-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: bedrock-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bedrock-network
+
+  # Legacy E-commerce System
+  legacy-system:
+    build:
+      context: .
+      dockerfile: legacy_system/Dockerfile
+    container_name: bedrock-legacy-system
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bedrock_legacy
+      LOG_LEVEL: INFO
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./legacy_system:/app/legacy_system
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bedrock-network
+
+  # MCP Gateway
+  mcp-gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: bedrock-mcp-gateway
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bedrock_legacy
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      LEGACY_SYSTEM_URL: http://legacy-system:8000
+      LOG_LEVEL: INFO
+      PORT: 8002
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      legacy-system:
+        condition: service_healthy
+    volumes:
+      - ./gateway:/app/gateway
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bedrock-network
+
+  # Bedrock AgentCore Runtime
+  agent-runtime:
+    build:
+      context: .
+      dockerfile: bedrock_runtime/Dockerfile
+    container_name: bedrock-agent-runtime
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bedrock_legacy
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      MCP_GATEWAY_URL: http://mcp-gateway:8002
+      AWS_REGION: us-east-1
+      BEDROCK_MODEL_ID: anthropic.claude-3-sonnet-20240229-v1:0
+      LOG_LEVEL: INFO
+      PORT: 8001
+      ENVIRONMENT: development
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mcp-gateway:
+        condition: service_healthy
+    volumes:
+      - ./bedrock_runtime:/app/bedrock_runtime
+      - ./agent:/app/agent
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bedrock-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  bedrock-network:
+    driver: bridge
