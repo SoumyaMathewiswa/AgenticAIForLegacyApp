@@ -14,56 +14,28 @@ alembic==1.13.0
 redis==5.0.1
 
 # AWS
-boto3==1.29.7
-botocore==1.32.7
-aioboto3==12.0.0
+boto3>=1.28.0
+botocore>=1.31.0
 
 # LLM & AI
-anthropic==0.7.1
-langchain==0.1.0
-langchain-community==0.0.10
-langchain-anthropic==0.1.0
-
-# HTTP
+anthropic>=0.25.0
 requests==2.31.0
 httpx==0.25.1
+
+# HTTP
 aiohttp==3.9.1
 
 # Security
-PyJWT==2.8.1
+PyJWT==2.8.0
 python-jose==3.3.0
 passlib==1.7.4
 bcrypt==4.1.1
 cryptography==41.0.7
 
-# OpenAPI
-openapi-spec-validator==0.7.0
+# Utilities
 pyyaml==6.0.1
 jsonschema==4.20.0
-
-# Observability
-opentelemetry-api==1.21.0
-opentelemetry-sdk==1.21.0
-opentelemetry-exporter-jaeger==1.21.0
-opentelemetry-instrumentation-fastapi==0.42b0
-opentelemetry-instrumentation-requests==0.42b0
-opentelemetry-instrumentation-sqlalchemy==0.42b0
 
 # Testing
 pytest==7.4.3
 pytest-asyncio==0.21.1
-pytest-cov==4.1.0
-httpx==0.25.1
-faker==20.1.0
-
-# Utilities
-python-multipart==0.0.6
-click==8.1.7
-typer==0.9.0
-loguru==0.7.2
-
-# Development
-black==23.12.0
-flake8==6.1.0
-mypy==1.7.1
-isort==5.13.2

@@ -72,8 +72,8 @@ docker-compose ps
 ```bash
 # 1. Check health
 curl http://localhost:8000/health
-curl http://localhost:8001/health
 curl http://localhost:8002/health
+curl http://localhost:8001/health
 
 # 2. Get available tools from MCP Gateway
 curl -X GET http://localhost:8002/tools \
@@ -90,6 +90,9 @@ curl -X POST http://localhost:8001/invocations \
 
 # 4. Run integration tests
 docker-compose exec agent-runtime pytest tests/test_integration.py -v
+
+# 5. Run the demo
+python demo.py
 ```
 
 ## Service Endpoints
@@ -238,6 +241,123 @@ KEYS session:*
 # View session data
 GET session:user-alice
 ```
+
+## Running Tests
+
+```bash
+# Run all tests
+docker-compose exec agent-runtime pytest tests/ -v
+
+# Run specific test file
+docker-compose exec agent-runtime pytest tests/test_integration.py -v
+
+# Run with coverage
+docker-compose exec agent-runtime pytest tests/ --cov=. --cov-report=html
+```
+
+## Demo Script
+
+The `demo.py` script demonstrates real agent workflows:
+
+```bash
+python demo.py
+```
+
+This will run through several scenarios:
+1. Product browsing with filters
+2. User account creation
+3. Multi-step cart operations
+
+## Development
+
+### Local Development Setup
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Start only database and cache
+docker-compose up postgres redis -d
+
+# Run services locally
+python -m uvicorn legacy_system.app:app --port 8000
+python -m uvicorn gateway.app:app --port 8002
+python -m uvicorn bedrock_runtime.app:app --port 8001
+```
+
+### Adding New Tools
+
+1. Add API endpoint to legacy system
+2. Register tool in `gateway/app.py` TOOL_REGISTRY
+3. Update agent prompts if needed
+4. Add tests
+
+### Environment Variables
+
+See `.env.example` for all configuration options. Key variables:
+
+- `AWS_REGION`: AWS region for Bedrock
+- `BEDROCK_MODEL_ID`: Claude model to use
+- `JWT_SECRET`: Authentication secret
+- `DATABASE_URL`: PostgreSQL connection
+- `REDIS_URL`: Redis connection
+
+## Production Deployment
+
+### AWS Deployment
+
+1. **ECS Fargate**: Containerized deployment
+2. **RDS PostgreSQL**: Managed database
+3. **ElastiCache Redis**: Managed cache
+4. **API Gateway**: Expose agent endpoints
+5. **CloudWatch**: Monitoring and logging
+
+### Security Considerations
+
+- Use proper JWT validation
+- Implement rate limiting
+- Add input validation and sanitization
+- Use VPC and security groups
+- Enable encryption in transit and at rest
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Bedrock Access Denied**
+   - Check AWS credentials
+   - Verify IAM permissions for Bedrock
+   - Ensure correct region
+
+2. **Database Connection Failed**
+   - Check PostgreSQL container is running
+   - Verify connection string
+   - Check network connectivity
+
+3. **Tool Execution Errors**
+   - Verify MCP Gateway is accessible
+   - Check JWT token
+   - Review legacy API responses
+
+### Debug Mode
+
+Enable debug logging:
+```bash
+export LOG_LEVEL=DEBUG
+docker-compose up
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure all tests pass
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Development
 

@@ -5,7 +5,8 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
-COPY gateway /app/gateway
+COPY bedrock_runtime /app/bedrock_runtime
+COPY agent /app/agent
 
-EXPOSE 8002
-CMD ["uvicorn", "gateway.app:app", "--host", "0.0.0.0", "--port", "8002"]
+EXPOSE 8001
+CMD ["uvicorn", "bedrock_runtime.app:app", "--host", "0.0.0.0", "--port", "8001"]

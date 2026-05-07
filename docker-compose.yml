@@ -72,19 +72,16 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bedrock_legacy
       REDIS_URL: redis://redis:6379/0
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_SECRET: test-token-12345
       LEGACY_SYSTEM_URL: http://legacy-system:8000
       LOG_LEVEL: INFO
       PORT: 8002
     ports:
       - "8002:8002"
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      legacy-system:
-        condition: service_healthy
+      - postgres
+      - redis
+      - legacy-system
     volumes:
       - ./gateway:/app/gateway
     healthcheck:
@@ -104,7 +101,7 @@ services:
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bedrock_legacy
       REDIS_URL: redis://redis:6379/0
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_SECRET: test-token-12345
       MCP_GATEWAY_URL: http://mcp-gateway:8002
       AWS_REGION: us-east-1
       BEDROCK_MODEL_ID: anthropic.claude-3-sonnet-20240229-v1:0
@@ -114,12 +111,9 @@ services:
     ports:
       - "8001:8001"
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      mcp-gateway:
-        condition: service_healthy
+      - postgres
+      - redis
+      - mcp-gateway
     volumes:
       - ./bedrock_runtime:/app/bedrock_runtime
       - ./agent:/app/agent
