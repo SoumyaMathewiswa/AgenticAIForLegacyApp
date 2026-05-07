@@ -1,3 +1,14 @@
+"""Agent logic for the Bedrock-compatible AI runtime.
+
+This module implements the behavior of the AI agent that:
+- discovers available tools from the MCP gateway
+- builds prompts for the model
+- invokes Bedrock for reasoning
+- parses tool call instructions
+- executes tools against the legacy system
+- maintains conversational history
+"""
+
 import json
 import os
 from typing import Any, Dict, List, Optional
@@ -8,6 +19,11 @@ from pydantic import BaseModel
 
 
 class Tool:
+    """Represents a tool available to the agent.
+
+    A tool is an action the agent can perform through the MCP gateway.
+    """
+
     def __init__(self, name: str, description: str, inputs: Dict[str, str]):
         self.name = name
         self.description = description
@@ -22,6 +38,13 @@ class Tool:
 
 
 class Agent:
+    """Main agent class that orchestrates reasoning and tool execution.
+
+    The agent uses a model backend to decide whether to call tools and
+    then executes those tools through the MCP Gateway. Conversation history
+    is passed to the model so the agent can perform multi-turn reasoning.
+    """
+
     def __init__(self, bedrock_client=None, mcp_gateway_url: str = None):
         self.bedrock_client = bedrock_client or boto3.client("bedrock-runtime", region_name=os.getenv("AWS_REGION", "us-east-1"))
         self.mcp_gateway_url = mcp_gateway_url or os.getenv("MCP_GATEWAY_URL", "http://mcp-gateway:8002")

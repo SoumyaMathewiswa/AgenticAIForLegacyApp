@@ -1,3 +1,10 @@
+"""Legacy e-commerce system simulation.
+
+This module represents the legacy application that the agent augments.
+It exposes product, user, and shopping cart endpoints and uses PostgreSQL
+for persistence.
+"""
+
 import os
 from typing import List, Optional
 
@@ -16,6 +23,8 @@ Base = declarative_base()
 
 
 class Product(Base):
+    """Database model for catalog products."""
+
     __tablename__ = "products"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
@@ -26,6 +35,8 @@ class Product(Base):
 
 
 class User(Base):
+    """Database model for registered users."""
+
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(255), unique=True, nullable=False)
@@ -34,6 +45,8 @@ class User(Base):
 
 
 class ShoppingCart(Base):
+    """Database model for shopping cart line items."""
+
     __tablename__ = "shopping_carts"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False)
@@ -116,6 +129,7 @@ def list_products(
     query: Optional[str] = Query(None),
     db: Session = Depends(get_db),
 ):
+    """Return a filtered list of products from the legacy catalog."""
     query_set = db.query(Product)
     if category:
         query_set = query_set.filter(func.lower(Product.category) == category.lower())
@@ -129,6 +143,7 @@ def list_products(
 
 @app.post("/api/products", response_model=ProductRead, status_code=201)
 def create_product(payload: ProductCreate, db: Session = Depends(get_db)):
+    """Create a new product in the legacy catalog."""
     product = Product(**payload.dict())
     db.add(product)
     db.commit()
@@ -138,11 +153,13 @@ def create_product(payload: ProductCreate, db: Session = Depends(get_db)):
 
 @app.get("/api/users", response_model=List[UserRead])
 def list_users(db: Session = Depends(get_db)):
+    """List all users known by the legacy system."""
     return db.query(User).order_by(User.id).all()
 
 
 @app.post("/api/users", response_model=UserRead, status_code=201)
 def create_user(payload: UserCreate, db: Session = Depends(get_db)):
+    """Create a new user in the legacy system."""
     existing = db.query(User).filter((User.username == payload.username) | (User.email == payload.email)).first()
     if existing:
         raise HTTPException(status_code=400, detail="User already exists")
@@ -155,6 +172,7 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
 
 @app.post("/api/cart/add")
 def add_to_cart(payload: CartAddRequest, db: Session = Depends(get_db)):
+    """Add a product to a user's shopping cart."""
     product = db.query(Product).filter(Product.id == payload.product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -177,6 +195,7 @@ def add_to_cart(payload: CartAddRequest, db: Session = Depends(get_db)):
 
 @app.get("/api/cart/{user_id}", response_model=CartRead)
 def get_cart(user_id: int, db: Session = Depends(get_db)):
+    """Return the shopping cart contents for a given user."""
     items = (
         db.query(ShoppingCart)
         .filter(ShoppingCart.user_id == user_id)

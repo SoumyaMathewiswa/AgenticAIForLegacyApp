@@ -1,3 +1,10 @@
+"""Bedrock AgentCore runtime service.
+
+This module exposes the runtime API for the agent, including invocation,
+session management, and health status. It connects the agent logic to
+Redis-based session storage and the MCP gateway.
+"""
+
 import json
 import os
 from datetime import datetime
@@ -26,11 +33,15 @@ security = HTTPBearer(auto_error=False)
 
 
 class InvocationRequest(BaseModel):
+    """Schema for agent invocation requests."""
+
     session_id: str
     message: str
 
 
 class InvocationResponse(BaseModel):
+    """Schema for agent invocation responses."""
+
     session_id: str
     response: str
     timestamp: str
@@ -76,6 +87,7 @@ def health():
 
 @app.post("/invocations", response_model=InvocationResponse)
 def invoke_agent(payload: InvocationRequest, token: str = Depends(validate_token)):
+    """Invoke the agent with a user message and return the response."""
     try:
         # Get existing conversation history
         conversation_history = get_session(payload.session_id)

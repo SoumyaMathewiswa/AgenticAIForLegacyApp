@@ -1,3 +1,10 @@
+"""MCP Gateway service.
+
+This module exposes a small tool registry and a tool invocation endpoint
+that the agent can use. It converts tool requests into REST calls against
+the legacy system and returns structured results.
+"""
+
 import os
 from typing import Any, Dict, List
 
@@ -52,6 +59,8 @@ TOOL_REGISTRY: List[Dict[str, Any]] = [
 
 
 class ToolRequest(BaseModel):
+    """Schema for invoking an MCP tool."""
+
     tool_name: str
     inputs: Dict[str, Any] = {}
 
@@ -69,11 +78,13 @@ def health():
 
 @app.get("/tools")
 def list_tools(token: str = Depends(validate_token)):
+    """Return the list of tools available for agent invocation."""
     return {"tools": TOOL_REGISTRY}
 
 
 @app.post("/invoke-tool")
 def invoke_tool(payload: ToolRequest, token: str = Depends(validate_token)):
+    """Invoke a named tool by translating it to a legacy API call."""
     tool = next((item for item in TOOL_REGISTRY if item["name"] == payload.tool_name), None)
     if not tool:
         raise HTTPException(status_code=404, detail=f"Tool not found: {payload.tool_name}")
